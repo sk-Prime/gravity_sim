@@ -346,12 +346,12 @@ class Game():
         if self.last_selected:
             self.static_btn.render()
         
-from gameUtils import Camera
+#from gameUtils import Camera
 def simulate():
     screen = pygame.display.set_mode((conf.screen_w, conf.screen_h))
     game = Game(screen)
     clock = pygame.time.Clock()
-    camera = Camera(screen)
+    #camera = Camera(screen)
     while True:
         clock.tick(conf.fps)
         screen.fill(conf.bg)
@@ -374,7 +374,7 @@ def simulate():
         
         game.apply_gravity()
         game.render()
-        camera.snap_pointer()
+        #camera.snap_pointer()
         pygame.display.update()
         
 if __name__ == "__main__":
