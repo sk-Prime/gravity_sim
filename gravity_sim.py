@@ -19,7 +19,7 @@ class Config:
         self.button_bg =(255,255,255)
         self.button_w = 80
         self.button_h = 50
-        self.button_y = 1300
+        self.button_y = 1300 #buttons position.
         self.button_space = 10
         self.button_border = 1
         #randomly generated sun and planet size will be within this pixel range
@@ -38,7 +38,7 @@ class Config:
         self.path_sample_size = 50 #number of sample, length of the path
         self.path_sample_sec = 25 #times in a second
         self.path_color = (255,255,255)
-        self.path_color_sprite = True
+        self.path_color_sprite = True #path color from sprite
         
     def set_screen_info(self,x,y):
         """Calculate parameters using given screen width and height"""
@@ -61,7 +61,7 @@ conf = Config()
 class Sprite:
     def __init__(self):
         self.screen = None
-        
+        self.name = None
         self.alive=True
         
         #True = Affect other objects but hold own's position
@@ -82,7 +82,7 @@ class Sprite:
         self.t_passed = 0
         self.path_color = conf.path_color
     @classmethod
-    def from_circle(cls,screen,a,dense_f=1,pos=(0,0),color=None):
+    def from_circle(cls,screen,a,dense_f=1,pos=(0,0),color=None,name=None):
         if not color: color = [randint(0,255) for _ in range(3)]
         surface = pygame.Surface((a,)*2)
         pygame.draw.circle(surface,color,(a/2,a/2),a/2)
@@ -96,6 +96,7 @@ class Sprite:
         #area multiplied by density factor is the mass of a circle
         temp_cls.mass = int(round(math.pi * a**2,0)*dense_f)
         temp_cls.position=pos[0]-a//2,pos[1]-a//2 #center of a given pos
+        temp_cls.name = name
         if conf.path_color_sprite:
             temp_cls.path_color = color
         return temp_cls
@@ -133,10 +134,11 @@ class Sprite:
                         #modifying and storing velocity. Storing because it will work as inertia.
                         self.velocity_x+=(force*unit_a)
                         self.velocity_y+=(force*unit_b)
-                        #changing velocity according to velocity
+                        #changing postion according to velocity
                         self.position= px+self.velocity_x,py+self.velocity_y
                         if conf.draw_line: #an attempt to convert force into color (red)
-                            pygame.draw.line(self.screen,(min(0.0019*force**-1,255),0,255),(sx,sy),(x,y))
+                            if n>i or sprite.name=="star":
+                                pygame.draw.line(self.screen,(min(0.0019*force**-1,255),0,255),(sx,sy),(x,y))
                         if conf.draw_path:
                             self.t_passed += self.clock.tick()/1000
                             if self.t_passed > 1/conf.path_sample_sec:
@@ -154,6 +156,9 @@ class Sprite:
         self.screen.blit(self.sprite,self.position)
         if conf.draw_path and self.path_p_n>2:
             pygame.draw.lines(self.screen, self.path_color,0,self.path_points)
+        elif not conf.draw_path and self.path_p_n:
+            self.path_p_n =0
+            self.path_points = []
 class Button():
     def __init__(self,screen,size,name):
         self.screen= screen
@@ -219,13 +224,13 @@ class Game():
     def create_star(self):
         r = randint(*conf.star_size_range)
         color = [randint(180,255),randint(0,100),randint(0,100)]
-        star = Sprite().from_circle(self.screen,r,dense_f=20,color=color)
+        star = Sprite().from_circle(self.screen,r,dense_f=20,color=color,name="star")
         return star
         
     def create_planet(self):
         r = randint(*conf.planet_size_range)
         color = [randint(0,255),randint(50,255),randint(50,255)]
-        planet = Sprite().from_circle(self.screen,r,color=color)
+        planet = Sprite().from_circle(self.screen,r,color=color,name="planet")
         if conf.planet_velocity:
             planet.velocity_y=-conf.planet_starting_velocity
         return planet
@@ -285,7 +290,7 @@ class Game():
             else: #star mode
                 star = self.create_star()
                 star.set_pos(mx,my)
-                self.sprites.append(star)
+                self.sprites.insert(0,star)
                 star.static=True
 
         elif not self.create and not self.selected:
